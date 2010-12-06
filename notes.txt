@@ -1,0 +1,127 @@
+Notes on evolving an approximately proportional Venn diagram
+
+===
+
+	Find area of overlap between two circles, given:
+		Ra: radius of circle A
+		Rb: radius of circle B
+		Dab: distance between centers of circles A and B.
+	Obviously, if
+		Dab >= Ra + Rb, overlap is 0
+	If
+		Dab <= min(Ra, Rb)
+		overlap = pi * (min(Ra, Rb))^2 [the area of the smaller set]
+	The hard part is anything in between:
+		min(Ra, Rb) < Dab < Ra + Rb
+
+===
+
+Representing two sets as circles is easy, since the area of each circle can be proportional to the number of items it contains, and then the two circles can be overlapped to the extent necessary.
+
+This looks like a hairy algebraic geometry problem, but it is a really simple (1 dimensional) optimization problem.
+
+When you add a third set, it becomes messier. This is because you cannot overlap three circles to arbitrary degrees. For example, consider these sets:
+
+setA <- c(1:10)
+setB <- c(6:15)
+setC <- c(1,2,3,4,5,11)
+
+Here setC mostly overlaps with A or C, but not both (like an exclusive or).
+
+I propose to represent setC as an arbitrary polygon, and use an evolutionary algorithm to optimize it to represent the set.
+
+Sets A and B can be done as circles, and only set C needs to be evolved.
+
+Alternatively, they could all be evolved.
+
+Aesthetically, I want the blobs to have smooth curves, more or less like you would draw them casually. 
+
+It may be more useful to have them _approximate_ rather than _exact_. Consider the exclusive-or of two overlapping sets A and B, or A and B. Theses sets exactly overlap the parts of the two-circle diagram, so the only way to show that this is actually a different set is by color. With approximate drawings, the edges may not overlap exactly, so it might be easier to see that a dfferent set is represented.
+
+Monte-Carlo integration may be perfectly suited to this approach. Circles are good because it is easy to tell if a given point is in the set. But how do you put some fixed number of random points inside a circle? If you use choose a random angle and radius (between zero and the circle radius), you are guaranteed to have the point fall inside the circle.
+
+===
+
+Bit is the distribution of these points in 2 dimensions uniform, or is it more concentrated in the center of the circle? Nope: see
+http://www.devmaster.net/forums/showthread.php?t=9776
+(take the square root of the random r value)
+
+Explanation from http://www.gamedev.net/community/forums/topic.asp?topic_id=332994
+r = random value between 0 and 1
+a = random value between 0 and 2*pi
+
+float R = RealRadius - sqrt(r) * RealRadius; // Fix distribution and scale to [0, RealRadius]
+
+float x = cosf(a) * R;
+float y = sinf(a) * R;
+
+See also http://mathforum.org/library/drmath/view/71234.html
+
+"Another method is to select a random pair of values (M, theta) where M
+is the magnitude of the vector from the center to a random point and
+theta is the angle by which the vector is rotated.  The random points
+then have the following form.
+
+  x = xc + M cos(theta)
+  y = yc + M sin(theta)
+
+The distribution of theta is uniform on the interval [0, 2pi].  The
+distribution of M has a ramp shape on the interval [0, R].  It is a
+good exercise to prove that M has this distribution.
+
+To compute random values of M you can use the inverse of its
+cumulative distribution.  Another technique is to generate a pair of
+values (r1, r2) that are uniform on the interval [0, R] and let M =
+max(r1, r2).  This proof is also a good exercise."
+
+===
+
+The faster approach is probably to put random points in the square containing the circle, then select just those within the circle.
+
+For arbitrary polygon blobs, we could use brute force in the evolutionary selection to favor smoothish blobs over spiky ones, maybe by favoring points nearer the line through the previous two points, and maybe favoring more evenly spaced points along the edge of the polygon.
+
+Determining whether a given point is inside a given polygon is a well-studied problem in computer graphics:
+http://local.wasp.uwa.edu.au/~pbourke/geometry/insidepoly/
+
+According to Wikipedia:
+http://en.wikipedia.org/wiki/Point_in_polygon
+"Simpler algorithms are possible for monotone polygons, star-shaped polygons and convex polygons."
+
+===
+
+comparing implementation speed: 
+
+http://tolstoy.newcastle.edu.au/R/help/04/03/1275.html
+"If you time two functions to compare them and it just so happens 
+that a garbage collection occurs within one but not the other 
+then your timing will be distorted. To control for this issue 
+a gc() command just before each system.time command: 
+gc(); system.time(x <- rnorm(1000000)) 
+That will cause a garbage collection to occur before the 
+code is run so that it starts out from a known state. 
+Another thing you could do is to try running from a fresh 
+R session. "
+
+===
+
+http://local.wasp.uwa.edu.au/~pbourke/geometry/insidepoly/
+
+/* The following code is by Randolph Franklin, it returns 1 for interior points and 0 for exterior points. */
+
+int pnpoly(int npol, float *xp, float *yp, float x, float y){
+  int i, j, c = 0;
+  for (i = 0, j = npol-1; i < npol; j = i++) {
+	if ((((yp[i] <= y) && (y < yp[j])) ||
+		 ((yp[j] <= y) && (y < yp[i]))) &&
+		(x < (xp[j] - xp[i]) * (y - yp[i]) / (yp[j] - yp[i]) + xp[i]))
+	  c = !c;
+  }
+  return c;
+}
+
+
+===
+
+This s cool:
+
+http://rogeralsing.com/2008/12/07/genetic-programming-evolution-of-mona-lisa/

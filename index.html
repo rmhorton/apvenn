@@ -1,0 +1,166 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="Generator" content="TextWrangler" />
+	<title>Proportional Venn Diagrams in R</title>
+	<!--link rel="stylesheet" type="text/css" media="screen,print" href="styles.css" /-->
+    <!--script type="text/javascript" src="scripts.js"></script-->
+	<style type="text/css">
+	.author {
+		text-align: center;
+		margin: 10 0 0 0;
+	}
+	h1, h2, h3 {
+		margin-top: 2em;
+	}
+	h2 {
+		border: 1px solid black;
+		background-color: #FAA;
+	}
+	.figureTitle {
+		font-weight: bold;
+		font-size: 18pt;
+		font-family: 'Sans-Serif';
+		color: #300;
+		text-align: center;
+		margin: 50 0 10 0
+	}
+	.code {
+		font-family:	"Courier New" "Courier" "monospace";
+		white-space:pre;
+		background-color: #aaa;
+		margin: 0% 15%;
+		padding: 10px;
+	}
+	.tty {
+		text-align: center;
+		font-family:	"Courier New" "Courier" "monospace";
+		margin: 0;
+	}
+	.figureLegend {
+		text-align: center;
+		font-style: italic;
+		padding: 0% 15%;
+	}
+	body {
+		text-align: center;
+		background-color: #ffa;
+	}
+	ul {
+		text-align: left;
+	}
+	p {
+		text-align: left;
+	}
+	</style>
+	<script type="text/javascript">
+		function contact(user, host, ext){
+			return user + "@" + host + '.' + ext;
+		}
+	</script>
+</head>
+<body>
+
+<h1>Proportional Venn Diagrams in R</h1>
+<p class="author">Robert M. Horton, PhD</p>
+<p class="tty">
+	<script language="javascript">
+		document.write(contact('rmhorton', 'attotron', 'com'))
+	</script>
+</p>
+
+<h2>Introduction</h2>
+
+<p>
+This is an early attempt at an R program to generate Venn diagrams, where the areas of the sets are proportional to the sizes of the sets. Overlapping areas should also be proportional to the numbers of overlapping members.
+</p>
+
+<p>
+Existing R packages for Venn diagrams do not draw proportional areas. I have not been able to figure out how to solve algebraically even the simplest case of two circles with a given area of overlap; it is not your average SAT problem. Here I use "random shotgun" integration to estimate the areas of the circles and their overlap, in a very simple, one-dimensional optimization.
+</p>
+
+<p>
+The current code only supports two sets. They are represented by circles with areas proportional to set size. These circles are initially positioned far apart, then they are moved closer together until the overlap by approximately the correct amount.
+</p>
+
+<p>
+I hope to extended this idea to a third set. Circles will not work for the general case of three sets, since some combinations cannot be represented (e.g., say set 3 is the exclusive-or of sets 1 and 2), so I'll have to use one or more irregular shapes. I'll also probably settle for approximate proportionality. 
+</p>
+
+<h2>Examples</h2>
+
+<div class="figure">
+<p class="figureTitle">[A..J] vs [K..Z]</p>
+<img src="png/A_J_vs_K_Z.png">
+<p class="figureLegend">
+Here the sets do not intersect . Note that the area of each circle reflects the number of elements in the corresponding set. (I should draw them closer together so they are both completely shown in the figure)
+</p>
+<p class="code">
+set1 <- LETTERS[1:10]	# ("A", "B", "C", ...)
+set2 <- LETTERS[11:26]	# ("K", "L", "M", ... , "Z")
+vennParams <- apvenn2(set1, set2, setLabels)
+</p>
+</div>
+
+<div class="figure">
+<p class="figureTitle">[A..J] vs [J..Z]</p>
+<img src="png/A_J_vs_J_Z.png">
+<p class="figureLegend">
+Set 1 has 10 elements, set 2 has seventeen, and they share one in common.
+</p>
+<p class="code">
+set1 <- LETTERS[1:10]	# ("A", "B", "C", ...)
+set2 <- LETTERS[10:26]	# ("J", "K", "L", ... , "Z")
+vennParams <- apvenn2(set1, set2, setLabels)
+</p>
+</div>
+
+<div class="figure">
+<p class="figureTitle">[A..O] vs [J..Z]</p>
+<img src="png/A_O_vs_J_Z.png">
+<p class="figureLegend">
+</p>
+<p class="code">
+set1 <- LETTERS[1:15]	# ("A", "B", "C", ...)
+set2 <- LETTERS[10:26]	# ("J", "K", "L", ... , "Z")
+vennParams <- apvenn2(set1, set2, setLabels)
+</p>
+</div>
+
+<div class="figure">
+<p class="figureTitle">[A..J] vs [E..Z]</p>
+<img src="png/A_J_vs_E_Z.png">
+<p class="figureLegend">
+</p>
+<p class="code">
+set1 <- LETTERS[1:10]	# ("A", "B", "C", ...)
+set2 <- LETTERS[5:26]	# ("E", "F", "G", ... , "Z")
+vennParams <- apvenn2(set1, set2, setLabels)
+</p>
+</div>
+
+<div class="figure">
+<p class="figureTitle">[A..J] vs [A..Z]</p>
+<img src="png/A_J_vs_A_Z.png">
+<p class="figureLegend">
+</p>
+<p class="code">
+set1 <- LETTERS[1:10]	# ("A", "B", "C", ...)
+set2 <- LETTERS[1:26]	# ("A", "B", "C", ... , "Z")
+vennParams <- apvenn2(set1, set2, setLabels)
+</p>
+</div>
+
+<h2>To Do</h2>
+
+<ul>
+<li>Make the numeric integration more robust (e.g., use larger numbers of measurements near peak score zone)</li>
+<li>Use analytical solution rather than numeric. Assuming we cannot figure out the actual geometric equations, maybe fit a curve to numeric results. This should increase both speed and reliability.</li>
+<li>Better presentation: be sure both sets are fully visible; remove axis lines and labels.</li>
+<li>Handle a third set; this will require (at least one?) irregular shape(s) and probably some numerical optimization approach, like evolutionary programming.</li>
+<li>Rewrite this documentation in Sweave, with embedded executable code.</li>
+<li>Package it up for CRAN.</li>
+</ul>
+
+</body>
+</html>
