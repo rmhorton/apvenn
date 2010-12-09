@@ -122,6 +122,52 @@ int pnpoly(int npol, float *xp, float *yp, float x, float y){
 
 ===
 
-This s cool:
+This is cool:
 
 http://rogeralsing.com/2008/12/07/genetic-programming-evolution-of-mona-lisa/
+
+===
+
+Eric and Xinwei's approach:
+see http://en.wikipedia.org/wiki/Circular_segment
+
+Using the computer algebra program "Maxima" (http://maxima.sourceforge.net/):
+
+ra = radius of the larger circle, A.
+rb = radius of the smaller circle, B.
+d = distance between the centers of circles A and B.
+p = proportionality factor (fraction of d from center of A to line where edges of circles intersect. The distance to the center of B is 1-p.)
+Ao = area of overlap
+ta, tb = theta a, theta b
+
+solve(ra^2 - p^2*d^2 = rb^2 - (1-p)^2 * d^2, p);
+
+
+                                     2     2    2
+                                   rb  - ra  - d
+(%o8)                       [p = - --------------]
+                                           2
+                                        2 d
+
+
+Ao = (pi * ra^2 * ((2 * ta)/(2 * pi)) - p*d*h) + (pi * rb^2 * ((2 * tb)/(2 * pi)) - (1-p)*d*h)
+
+Ao = ra^2 * acos(p*d/ra) + rb^2 * acos((1-p)*d/rb) - d*h
+
+
+Finding the last term using Maxima:
+
+h = sqrt(ra^2 - p^2*d^2)
+p = (d^2 + ra^2 - rb^2)/(2*d^2)
+
+(%i13) h: sqrt(ra^2 - ((d^2 + ra^2 - rb^2)/(2*d^2))^2*d^2);
+                                        2     2    2 2
+                               2   (- rb  + ra  + d )
+(%o13)                  sqrt(ra  - -------------------)
+                                             2
+                                          4 d
+
+Translating that into code by hand:
+h = sqrt(ra^2 - (d^2 + ra^2 - rb^2 )^2/(4*d^2))
+d*h = d*(sqrt(ra^2 - (d^2 + ra^2 - rb^2 )^2/(4*d^2))
+
